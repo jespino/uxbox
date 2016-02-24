@@ -27,6 +27,11 @@
             [uxbox.ui.workspace.grid :refer (grid)])
   (:import goog.events.EventType))
 
+(defn- focus-shape
+  [id]
+  (as-> (l/in [:shapes-by-id id]) $
+    (l/focus-atom $ st/state)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Background
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -47,12 +52,82 @@
 ;; Shape
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; FIXME: Temporal approach, pending big refactor.
+
 (declare shape)
 
+;; (defn shape-render
+;;   [own id selected]
+;;   (let [{:keys [id x y group] :as item} (rum/react (focus-shape id))
+;;         selected? (contains? selected id)
+;;         local (:rum/local own)]
+;;     (letfn [(on-mouse-down [event]
+;;               (when-not (:blocked item)
+;;                 (cond
+;;                   (and group (:locked (sh/resolve-parent item)))
+;;                   nil
+
+;;                   (and (not selected?) (empty? selected))
+;;                   (do
+;;                     (dom/stop-propagation event)
+;;                     (swap! local assoc :init-coords [x y])
+;;                     (wb/emit-interaction! :shape/movement)
+;;                     (rs/emit! (dw/select-shape id)))
+
+;;                   (and (not selected?) (not (empty? selected)))
+;;                   (do
+;;                     (dom/stop-propagation event)
+;;                     (swap! local assoc :init-coords [x y])
+;;                     (if (kbd/shift? event)
+;;                       (rs/emit! (dw/select-shape id))
+;;                       (rs/emit! (dw/deselect-all)
+;;                                 (dw/select-shape id))))
+
+;;                   :else
+;;                   (do
+;;                     (dom/stop-propagation event)
+;;                     (swap! local assoc :init-coords [x y])
+;;                     (wb/emit-interaction! :shape/movement)))))
+
+;;             (on-mouse-up [event]
+;;               (cond
+;;                 (and group (:locked (sh/resolve-parent item)))
+;;                 nil
+
+;;                 :else
+;;                 (do
+;;                   (dom/stop-propagation event)
+;;                   (wb/emit-interaction! :nothing)
+;;                   )))]
+;;       (html
+;;        [:g.shape {:class (when selected? "selected")
+;;                   :on-mouse-down on-mouse-down
+;;                   :on-mouse-up on-mouse-up}
+;;         (sh/-render item #(shape % selected))]))))
+
+;; (def ^:static shape
+;;   (mx/component
+;;    {:render shape-render
+;;     :name "shape"
+;;     :mixins [(mx/local {}) rum/reactive mx/static]}))
+
+(def ^:private selection-circle-style
+  {:fillOpacity "0.5"
+   :strokeWidth "1px"
+   :vectorEffect "non-scaling-stroke"})
+
+(def ^:private default-selection-props
+  {:r 5 :style selection-circle-style
+   :fill "#333"
+   :stroke "#333"})
+
 (defn shape-render
-  [own item selected]
-  (let [{:keys [id x y width height group] :as item} item
+  [own id]
+  (let [item (rum/react (focus-shape id))
+        {:keys [x y width height group]} item
+        selected (rum/react wb/selected-shapes-l)
         selected? (contains? selected id)
+        {:keys [x y width height]} (sh/-outer-rect item)
         local (:rum/local own)]
     (letfn [(on-mouse-down [event]
               (when-not (:blocked item)
@@ -63,14 +138,12 @@
                   (and (not selected?) (empty? selected))
                   (do
                     (dom/stop-propagation event)
-                    (swap! local assoc :init-coords [x y])
                     (wb/emit-interaction! :shape/movement)
                     (rs/emit! (dw/select-shape id)))
 
                   (and (not selected?) (not (empty? selected)))
                   (do
                     (dom/stop-propagation event)
-                    (swap! local assoc :init-coords [x y])
                     (if (kbd/shift? event)
                       (rs/emit! (dw/select-shape id))
                       (rs/emit! (dw/deselect-all)
@@ -79,7 +152,7 @@
                   :else
                   (do
                     (dom/stop-propagation event)
-                    (swap! local assoc :init-coords [x y])
+                    ;; (swap! local assoc :init-coords [x y])
                     (wb/emit-interaction! :shape/movement)))))
 
             (on-mouse-up [event]
@@ -96,13 +169,26 @@
        [:g.shape {:class (when selected? "selected")
                   :on-mouse-down on-mouse-down
                   :on-mouse-up on-mouse-up}
-        (sh/-render item #(shape % selected))]))))
+        (sh/-render item #(shape %))
+        (when selected?
+          [:g.controls
+           [:rect {:x x :y y :width width :height height :stroke-dasharray "5,5"
+                   :style {:stroke "#333" :fill "transparent"
+                           :stroke-opacity "1"}}]
+           [:circle.top-left (merge default-selection-props
+                                    {:cx x :cy y})]
+           [:circle.top-right (merge default-selection-props
+                                     {:cx (+ x width) :cy y})]
+           [:circle.bottom-left (merge default-selection-props
+                                       {:cx x :cy (+ y height)})]
+           [:circle.bottom-right (merge default-selection-props
+                                        {:cx (+ x width) :cy (+ y height)})]])]))))
 
 (def ^:static shape
   (mx/component
    {:render shape-render
     :name "shape"
-    :mixins [(mx/local {}) rum/reactive]}))
+    :mixins [(mx/local {}) rum/reactive mx/static]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Canvas
@@ -110,16 +196,14 @@
 
 (defn- canvas-render
   [own {:keys [width height id] :as page}]
-  (let [workspace (rum/react wb/workspace-l)
-        shapes-by-id (rum/react wb/shapes-by-id-l)
-        workspace-selected (:selected workspace)
-        xf (comp
-            (map #(get shapes-by-id %))
-            (remove :hidden))
-        shapes (->> (vals shapes-by-id)
-                    (filter #(= (:page %) id)))
-        shapes-selected (filter (comp workspace-selected :id) shapes)
-        shapes-notselected (filter (comp not workspace-selected :id) shapes)]
+  (println "canvas-render")
+  (let [workspace (rum/react wb/workspace-l)]
+        ;; shapes-by-id @wb/shapes-by-id-l
+        ;; workspace-selected (:selected workspace)
+        ;; shapes (->> (vals shapes-by-id)
+        ;;             (filter #(= (:page %) id)))
+        ;; shapes-selected (filter (comp workspace-selected :id) shapes)
+        ;; shapes-notselected (filter (comp not workspace-selected :id) shapes)]
     (html
      [:svg.page-canvas {:x wb/canvas-start-x
                         :y wb/canvas-start-y
@@ -129,11 +213,11 @@
       (background)
       (grid 1)
       [:svg.page-layout {}
-       (shapes-selection shapes-selected)
+       #_(shapes-selection shapes-selected)
        [:g.main {}
-        (for [item (reverse (sequence xf (:shapes page)))]
-          (-> (shape item workspace-selected)
-              (rum/with-key (str (:id item)))))
+        (for [item (:shapes page)]
+          (-> (shape item)
+              (rum/with-key (str item))))
         (draw-area)]]])))
 
 (def canvas

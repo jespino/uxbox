@@ -103,7 +103,7 @@
                       (map #(get shapes-by-id %))
                       (remove :hidden)
                       (reverse))]
-        (-> (factory item)
+        (-> (factory (:id item))
             (rum/with-key (str (:id item)))))])))
 
 (defmethod sh/-render-svg :builtin/icon

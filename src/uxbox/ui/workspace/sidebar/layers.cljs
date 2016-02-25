@@ -7,10 +7,10 @@
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
-            [uxbox.shapes :as shapes]
             [uxbox.library :as library]
             [uxbox.util.data :refer (read-string classnames)]
             [uxbox.data.workspace :as dw]
+            [uxbox.ui.shapes.core :as usc]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.icons :as i]
             [uxbox.ui.mixins :as mx]
@@ -86,7 +86,7 @@
 (defn- element-icon
   [item]
   (case (:type item)
-    :builtin/icon (shapes/-render-svg item)
+    :builtin/icon (usc/-render-svg item)
     :builtin/line i/line
     :builtin/circle i/circle
     :builtin/rect i/box

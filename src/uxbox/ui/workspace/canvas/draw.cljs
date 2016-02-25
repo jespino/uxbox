@@ -8,6 +8,7 @@
             [uxbox.state :as st]
             [uxbox.shapes :as sh]
             [uxbox.data.workspace :as dw]
+            [uxbox.ui.shapes.core :as usc]
             [uxbox.ui.workspace.base :as wb]
             [uxbox.ui.mixins :as mx]
             [uxbox.util.geom.point :as gpt]
@@ -26,7 +27,7 @@
         position (rum/react +drawing-position+)]
     (when shape
       (-> (sh/-resize shape position)
-          (sh/-render identity)))))
+          (usc/-render identity)))))
 
 (def ^:static draw-area
   (mx/component

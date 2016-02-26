@@ -8,24 +8,15 @@
             [uxbox.state :as st]
             [uxbox.shapes :as sh]
             [uxbox.data.workspace :as dw]
+            [uxbox.ui.core :as uuc]
             [uxbox.ui.keyboard :as kbd]
-            [uxbox.ui.shapes.core :as usc]
+            [uxbox.ui.shapes.core :as uusc]
             [uxbox.util.dom :as dom]))
 
 (defn- focus-shape
   [id]
   (as-> (l/in [:shapes-by-id id]) $
     (l/focus-atom $ st/state)))
-
-(defmethod usc/-render :builtin/icon
-  [{:keys [data id] :as shape} _]
-  (let [key (str id)
-        rfm (sh/-transformation shape)
-        attrs (merge {:id key :key key :transform (str rfm)}
-                     (usc/extract-style-attrs shape)
-                     (usc/make-debug-attrs shape))]
-    (html
-     [:g attrs data])))
 
 (def ^:private selection-circle-style
   {:fillOpacity "0.5"
@@ -37,10 +28,20 @@
    :fill "#333"
    :stroke "#333"})
 
-(defmethod usc/-shape-render :builtin/icon
+(defmethod uusc/-render :builtin/icon
+  [{:keys [data id] :as shape} _]
+  (let [key (str id)
+        rfm (sh/-transformation shape)
+        attrs (merge {:id key :key key :transform (str rfm)}
+                     (uusc/extract-style-attrs shape)
+                     (uusc/make-debug-attrs shape))]
+    (html
+     [:g attrs data])))
+
+(defmethod uusc/-shape-render :default ;;:builtin/icon
   [own item]
   (let [{:keys [id x y width height group]} item
-        selected (rum/react usc/selected-shapes-l)
+        selected (rum/react uusc/selected-shapes-l)
         selected? (contains? selected id)
         {:keys [x y width height]} (sh/-outer-rect item)
         local (:rum/local own)]
@@ -53,7 +54,7 @@
                   (and (not selected?) (empty? selected))
                   (do
                     (dom/stop-propagation event)
-                    (usc/emit-action! :shape/movement)
+                    (uuc/emit-action! :shape/movement)
                     (rs/emit! (dw/select-shape id)))
 
                   (and (not selected?) (not (empty? selected)))
@@ -68,7 +69,7 @@
                   (do
                     (dom/stop-propagation event)
                     ;; (swap! local assoc :init-coords [x y])
-                    (usc/emit-action! :shape/movement)))))
+                    (uuc/emit-action! :shape/movement)))))
 
             (on-mouse-up [event]
               (cond
@@ -78,13 +79,13 @@
                 :else
                 (do
                   (dom/stop-propagation event)
-                  (usc/emit-action! :nothing)
+                  (uuc/emit-action! :nothing)
                   )))]
       (html
        [:g.shape {:class (when selected? "selected")
                   :on-mouse-down on-mouse-down
                   :on-mouse-up on-mouse-up}
-        (usc/-render item #(usc/shape %))
+        (uusc/-render item #(uusc/shape %))
         (when selected?
           [:g.controls
            [:rect {:x x :y y :width width :height height :stroke-dasharray "5,5"
@@ -100,3 +101,10 @@
                                         {:cx (+ x width) :cy (+ y height)})]])]))))
 
 
+(defmethod uusc/-render-svg :builtin/icon
+  [{:keys [data id view-box] :as shape}]
+  (let [key (str "icon-svg-" id)
+        view-box (apply str (interpose " " view-box))
+        props {:view-box view-box :id key :key key}]
+    (html
+     [:svg props data])))

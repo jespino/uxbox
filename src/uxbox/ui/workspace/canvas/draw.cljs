@@ -27,7 +27,7 @@
         position (rum/react +drawing-position+)]
     (when shape
       (-> (ush/-resize shape position)
-          (uusc/-render identity)))))
+          (uusc/render-shape identity)))))
 
 (def ^:static draw-area
   (mx/component

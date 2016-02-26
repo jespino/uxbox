@@ -11,15 +11,15 @@
 ;; Implementation Api
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmulti -shape-render
+(defmulti render-component
   (fn [own shape] (:type shape))
   :hierarchy #'sh/+hierarchy+)
 
-(defmulti -render
+(defmulti render-shape
   sh/dispatch-by-type
   :hierarchy #'sh/+hierarchy+)
 
-(defmulti -render-svg
+(defmulti render-shape-svg
   sh/dispatch-by-type
   :hierarchy #'sh/+hierarchy+)
 
@@ -27,7 +27,7 @@
 ;; Lenses
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:static selected-shapes-l
+(def ^:const selected-shapes-l
   (as-> (l/in [:workspace :selected]) $
     (l/focus-atom $ st/state)))
 
@@ -44,7 +44,7 @@
   [own id]
   (let [shape-l (focus-shape id)
         shape (rum/react shape-l)]
-    (-shape-render own shape)))
+    (render-component own shape)))
 
 (def ^:const shape
   (mx/component
@@ -84,4 +84,3 @@
         xf (map (fn [[x v]]
                     [(keyword (str "data-" (name x))) v]))]
       (into {} xf attrs)))
-

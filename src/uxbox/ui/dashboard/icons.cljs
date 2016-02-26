@@ -11,7 +11,7 @@
             [uxbox.util.lens :as ul]
             [uxbox.ui.icons :as i]
             [uxbox.ui.form :as form]
-            [uxbox.ui.shapes.core :as usc]
+            [uxbox.ui.shapes.core :as uusc]
             [uxbox.ui.lightbox :as lightbox]
             [uxbox.util.dom :as dom]
             [uxbox.ui.mixins :as mx]))
@@ -111,7 +111,7 @@
         [:div.dashboard-grid-content
          (for [icon (:icons coll)]
            [:div.grid-item.small-item.project-th {}
-            [:span.grid-item-image #_i/toggle (usc/-render-svg icon nil)]
+            [:span.grid-item-image #_i/toggle (uusc/render-shape-svg icon nil)]
             [:h3 (:name icon)]
             #_[:div.project-th-actions
              [:div.project-th-icon.edit i/pencil]

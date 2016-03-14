@@ -17,9 +17,9 @@
             [uxbox.ui.messages :as uum]
             [uxbox.util.time :as time]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Schemas
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Schema
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:const +login-schema+
   {:username [sc/required sc/string]
@@ -31,31 +31,20 @@
    :photo [sc/required sc/string]
    :fullname [sc/required sc/string]})
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- login-success
-  [{:keys [full photo username email] :as params}]
-  (sc/validate! +user-schema+ params)
-  (reify
-    rs/UpdateEvent
-    (-apply-update [_ state]
-      (assoc state :auth params))
-
-    rs/EffectEvent
-    (-apply-effect [_ state]
-      (r/go :dashboard/projects))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn login
   [{:keys [username password] :as params}]
   (sc/validate! +login-schema+ params)
   (letfn [(on-error [err]
-            (println err)
+            (println "on-error" err)
             (uum/error (tr "errors.auth"))
             (rx/empty))
           (on-success [value]
-            (rx/of (login-success value)))]
+            (rx/of (rs/swap #(assoc % :auth value))
+                   (r/navigate :dashboard/projects)))]
     (reify
       rs/WatchEvent
       (-apply-watch [_ state]

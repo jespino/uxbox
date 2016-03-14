@@ -66,7 +66,7 @@
   ([event & events]
    (run! #(rx/push! bus %) (into [event] events))))
 
-(defn swap-state
+(defn swap
   "A helper for just apply some function to state
   without a need to declare additional event."
   [f]
@@ -75,7 +75,7 @@
     (-apply-update [_ state]
       (f state))))
 
-(defn reset-state
+(defn reset
   "A event that resets the internal state with
   the provided value."
   [state]
@@ -108,5 +108,5 @@
       (rx/subscribe $ (fn [[event model]] (-apply-effect event model))))
 
     ;; Initialize the stream machinary with initial state.
-    (emit! (swap-state (fn [s] (merge s state))))
+    (emit! (swap #(merge % state)))
     state-s))

@@ -16,7 +16,7 @@
                  [cljsjs/react-dom "0.14.3-1"]
                  [cljsjs/moment "2.10.6-2"]
                  [funcool/lentes "1.0.0"]
-                 [funcool/httpurr "0.5.0-SNAPSHOT"]
+                 [funcool/httpurr "0.5.0-20160314.065111-4"]
                  [funcool/promesa "0.8.1"]
                  [funcool/beicon "0.6.1"]
                  [funcool/cuerdas "0.7.1"]

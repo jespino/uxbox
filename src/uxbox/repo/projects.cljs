@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.repo.auth
+(ns uxbox.repo.projects
   "A main interface for access to remote resources."
   (:refer-clojure :exclude [do])
   (:require [httpurr.client.xhr :as http]
@@ -18,22 +18,6 @@
 ;; Login
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- request-token
-  [params]
-  (urc/req! {:url (str urc/+uri+ "/auth/token")
-             :method :post
-             :auth false
-             :body params}))
-
-(defn- request-profile
-  []
-  (p/resolved {:fullname "Cirilla Fiona"
-               :photo "/images/favicon.png"
-               :username "cirilla"
-               :email "cirilla@uxbox.io"}))
-
-(defmethod urc/-do :login
+(defmethod urc/-do :fetch/projects
   [type data]
-  (p/alet [authdata (p/await (request-token data))
-           profile (p/await (request-profile))]
-    (merge profile authdata)))
+  (urc/req! {:url (str urc/+uri+ "/projects") :method :get}))

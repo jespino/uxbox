@@ -14,8 +14,7 @@
             [uxbox.state :as st]
             [uxbox.schema :as sc]
             [uxbox.locales :refer (tr)]
-            [uxbox.ui.messages :as uum]
-            [uxbox.util.time :as time]))
+            [uxbox.ui.messages :as uum]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Schema
@@ -39,7 +38,6 @@
   [{:keys [username password] :as params}]
   (sc/validate! +login-schema+ params)
   (letfn [(on-error [err]
-            (println "on-error" err)
             (uum/error (tr "errors.auth"))
             (rx/empty))
           (on-success [value]
@@ -49,6 +47,7 @@
       rs/WatchEvent
       (-apply-watch [_ state]
         (->> (rp/do :login (merge params {:scope "webapp"}))
+             (rx/from-promise)
              (rx/flat-map on-success)
              (rx/catch on-error))))))
 

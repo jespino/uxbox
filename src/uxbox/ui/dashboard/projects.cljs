@@ -14,7 +14,7 @@
             [uxbox.router :as r]
             [uxbox.rstore :as rs]
             [uxbox.state :as s]
-            [uxbox.util.time :as time]
+            [uxbox.util.datetime :as dt]
             [uxbox.data.dashboard :as dd]
             [uxbox.data.projects :as dp]
             [uxbox.data.workspace :as dw]
@@ -245,7 +245,7 @@
                                  :key (:id project)}
       [:h3 (:name project)]
       [:span.project-th-update
-       (str "Updated " (time/ago (:last-update project)))]
+       (str "Updated " (dt/timeago (:modified-at project)))]
       [:div.project-th-actions
        [:div.project-th-icon.pages
         i/page

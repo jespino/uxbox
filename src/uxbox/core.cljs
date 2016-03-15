@@ -10,8 +10,7 @@
   (:require [uxbox.state :as st]
             [uxbox.router :as rt]
             [uxbox.rstore :as rs]
-            [uxbox.ui :as ui]
-            [uxbox.data.load :as dl]))
+            [uxbox.ui :as ui]))
 
 (enable-console-print!)
 
@@ -19,11 +18,4 @@
   (println "bootstrap")
   (st/init)
   (rt/init)
-  (ui/init)
-
-  (rs/emit! (dl/load-data))
-
-  ;; During development, you can comment the
-  ;; following call for disable temprary the
-  ;; local persistence.
-  (dl/init))
+  (ui/init))

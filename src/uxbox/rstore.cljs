@@ -84,6 +84,8 @@
     (-apply-update [_ _]
       state)))
 
+(enable-console-print!)
+
 (defn init
   "Initializes the stream event loop and
   return a stream with model changes."

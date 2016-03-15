@@ -2,36 +2,29 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.repo.core
   "A main interface for access to remote resources."
   (:refer-clojure :exclude [do])
   (:require [httpurr.client.xhr :as http]
             [httpurr.status :as http.status]
-            [cognitect.transit :as t]
+            [hodgepodge.core :refer (local-storage)]
             [promesa.core :as p :include-macros true]
             [beicon.core :as rx]
+            [uxbox.transit :as t]
             [uxbox.state :as ust]))
 
 (def ^:private ^:const +uri+
   "http://127.0.0.1:5050/api")
 
-(defn- decode
-  [data]
-  (let [r (t/reader :json {:handlers {"u" ->UUID}})]
-    (t/read r data)))
-
-(defn- encode
-  [data]
-  (let [w (t/writer :json)]
-    (t/write w data)))
+(def ^:private +storage+
+  local-storage)
 
 (defn- conditional-decode
   [{:keys [body headers] :as response}]
   (if (= (get headers "content-type") "application/transit+json")
-    (assoc response :body (decode body))
+    (assoc response :body (t/decode body))
     response))
 
 (defn- handle-http-status
@@ -49,11 +42,13 @@
     {"authorization" (str "Token " (:token auth "no-token"))}))
 
 (defn- send!
-  [{:keys [body headers auth] :or {auth true} :as request}]
-  (let [headers (merge +headers+ headers
+  [{:keys [body headers auth method] :or {auth true} :as request}]
+  (let [headers (merge {}
+                       (when (not= method :get) +headers+)
+                       headers
                        (when auth (auth-headers)))
         request (merge (assoc request :headers headers)
-                       (when body {:body (encode body)}))]
+                       (when body {:body (t/encode body)}))]
     (-> (http/send! request)
         (p/catch (fn [err]
                    (println "[error]:" err)

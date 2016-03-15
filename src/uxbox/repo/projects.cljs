@@ -21,3 +21,7 @@
 (defmethod urc/-do :fetch/projects
   [type data]
   (urc/req! {:url (str urc/+uri+ "/projects") :method :get}))
+
+(defmethod urc/-do :fetch/pages
+  [type data]
+  (urc/req! {:url (str urc/+uri+ "/pages") :method :get}))

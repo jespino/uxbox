@@ -80,6 +80,19 @@
         (-> (rp/do :fetch/projects)
             (p/then on-loaded))))))
 
+(defn load-pages
+  []
+  (letfn [(transform [state pages]
+            (reduce stpr/assoc-page state pages))
+          (on-loaded [pages]
+            #(transform % pages))]
+    (reify
+      rs/WatchEvent
+      (-apply-watch [_ state]
+        (println "load-pages")
+        (-> (rp/do :fetch/pages)
+            (p/then on-loaded))))))
+
 (defn create-page
   [{:keys [name width height project layout] :as data}]
   (sc/validate! +create-page-schema+ data)
@@ -148,15 +161,20 @@
   "A shortcut event that redirects the user to the
   first page of the project."
   ([projectid]
-   (go-to projectid nil))
+   (reify
+     rs/WatchEvent
+     (-apply-watch [_ state]
+       (println "go-to" projectid)
+       (let [pages (stpr/project-pages state projectid)
+             pageid (:id (first pages))
+             params {:project-uuid projectid
+                     :page-uuid pageid}]
+         (rx/of (r/navigate :workspace/page params))))))
+
   ([projectid pageid]
    (reify
-     rs/EffectEvent
-     (-apply-effect [_ state]
-       (if pageid
-         (rs/emit! (r/navigate :workspace/page {:project-uuid projectid
-                                                :page-uuid pageid}))
-         (let [pages (stpr/project-pages state projectid)
-               pageid (:id (first pages))]
-           (rs/emit! (r/navigate :workspace/page {:project-uuid projectid
-                                                  :page-uuid pageid}))))))))
+     rs/WatchEvent
+     (-apply-watch [_ state]
+       (let [params {:project-uuid projectid
+                     :page-uuid pageid}]
+         (rx/of (r/navigate :workspace/page params)))))))

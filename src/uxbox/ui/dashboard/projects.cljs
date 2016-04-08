@@ -196,6 +196,9 @@
               (lightbox/open! :new-project))]
       (html
        [:section.dashboard-grid
+        ;; LOADER WIP
+        [:div.loader-content i/loader]
+        ;; LOADER WIP
         [:h2 "Your projects"]
          [:div.dashboard-grid-content
           [:div.grid-item.add-project

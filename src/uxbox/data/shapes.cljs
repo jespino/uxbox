@@ -164,6 +164,15 @@
     (-apply-update [_ state]
       (update-in state [:shapes-by-id sid] sh/move' opts))))
 
+(defn update-exact-position
+  "Update the start position coordenate of the shape."
+  [{:keys [id x1 y1 x2 y2] :as opts}]
+  (reify
+    rs/UpdateEvent
+    (-apply-update [_ state]
+      (update-in state [:shapes-by-id id] assoc
+                 :x1 x1 :y1 y1 :x2 x2 :y2 y2))))
+
 (defn update-text
   "Update the start position coordenate of the shape."
   [sid {:keys [content]}]

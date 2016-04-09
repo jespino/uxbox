@@ -28,7 +28,7 @@
         (and (not selected?) (empty? selected))
         (do
           (dom/stop-propagation event)
-          (uuc/acquire-action! "ui.shape.move")
+          (uuc/acquire-action! "ui.shape.move" [shape])
           (rs/emit! (dw/select-shape id)))
 
         (and (not selected?) (not (empty? selected)))
@@ -42,7 +42,7 @@
         :else
         (do
           (dom/stop-propagation event)
-          (uuc/acquire-action! "ui.shape.move"))))))
+          (uuc/acquire-action! "ui.shape.move" [shape]))))))
 
 (defn on-mouse-up
   [event {:keys [id group] :as shape}]

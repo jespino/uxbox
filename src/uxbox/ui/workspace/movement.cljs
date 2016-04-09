@@ -10,13 +10,28 @@
   (:require [beicon.core :as rx]
             [uxbox.rstore :as rs]
             [uxbox.state :as st]
+            [uxbox.shapes :as sh]
             [uxbox.ui.core :as uuc]
             [uxbox.ui.workspace.base :as wb]
+            [uxbox.ui.workspace.align :as align]
             [uxbox.data.shapes :as uds]
             [uxbox.util.geom.point :as gpt]))
 
 (declare initialize)
 (declare handle-movement)
+
+
+(defn- coords-delta
+  [[old new]]
+  (gpt/subtract new old))
+
+(defonce mouse-delta-s
+  (->> wb/mouse-viewport-s
+       (rx/sample 10)
+       (rx/buffer 2 1)
+       (rx/map coords-delta)
+       (rx/share)))
+
 
 ;; --- Public Api
 
@@ -29,23 +44,23 @@
 ;; --- Implementation
 
 (defn- initialize
-  []
+  [{shapes :payload}]
   (let [stoper (->> uuc/actions-s
                     (rx/map :type)
                     (rx/filter empty?)
                     (rx/take 1))]
     (as-> wb/mouse-delta-s $
       (rx/take-until stoper $)
-      (rx/on-value $ handle-movement))))
+      (rx/scan (fn [acc delta]
+                 (mapv #(sh/move % delta) acc)) shapes $)
+      (rx/mapcat (fn [items]
+                   (->> (apply rx/of items)
+                        (rx/mapcat align/translate)
+                        (rx/reduce conj []))) $)
+      (rx/subscribe $ handle-movement nil #(println "complete")))))
 
 (defn- handle-movement
   [delta]
-  (let [pageid (get-in @st/state [:workspace :page])
-        selected (get-in @st/state [:workspace :selected])
-        shapes (->> (vals @wb/shapes-by-id-l)
-                    (filter #(= (:page %) pageid))
-                    (filter (comp selected :id)))
-        delta (gpt/divide delta @wb/zoom-l)]
-    (doseq [{:keys [id group]} shapes]
-      (rs/emit! (uds/move-shape id delta)))))
+  (doseq [shape delta]
+    (rs/emit! (uds/update-exact-position shape))))
 

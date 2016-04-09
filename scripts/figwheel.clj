@@ -7,7 +7,7 @@
 
 (ra/start-figwheel!
   {:figwheel-options {:css-dirs ["resources/public/css"]}
-   :build-ids ["dev"]
+   :build-ids ["dev" "worker-align"]
    :all-builds
    [{:id "dev"
      :figwheel {:on-jsload "uxbox.ui/init"}
@@ -20,10 +20,26 @@
                                   "https://test.uxbox.io/api"}
                 :warnings {:ns-var-clash false}
                 :pretty-print true
-                :language-in  :ecmascript5
+                :language-in  :ecmascript6
                 :language-out :ecmascript5
                 :output-to "resources/public/js/main.js"
                 :output-dir "resources/public/js"
+                :verbose true}}
+
+    {:id "worker-align"
+     :source-paths ["src" "vendor"]
+     :compiler {:main 'uxbox.workers.align
+                :asset-path "js"
+                :parallel-build false
+                :optimizations :simple
+                :warnings {:ns-var-clash false}
+                :pretty-print true
+                :static-fns true
+                :language-in  :ecmascript6
+                :language-out :ecmascript5
+                :output-to "resources/public/js/worker-align.js"
+                ;; :source-map "resources/public/js/worker-align.js.map"
+                ;; :output-dir "resources/public/js/out-worker"
                 :verbose true}}]})
 
 (ra/cljs-repl)

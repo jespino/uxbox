@@ -70,7 +70,7 @@
           (-> (uus/shape item)
               (rum/with-key (str item))))
         (draw-area)]]
-      (when (contains? flags :grid)
+      #_(when (contains? flags :grid)
         (grid))])))
 
 (def canvas
@@ -87,6 +87,7 @@
   [own]
   (let [workspace (rum/react uuwb/workspace-l)
         page (rum/react uuwb/page-l)
+        flags (:flags workspace)
         drawing? (:drawing workspace)
         zoom (or (:zoom workspace) 1)]
     (letfn [(on-mouse-down [event]
@@ -109,9 +110,11 @@
                        :on-mouse-up on-mouse-up}
         [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
          (if page
-           (canvas page))]
-         (ruler)
-         (selrect)]))))
+           (canvas page))
+         (if (contains? flags :grid)
+           (grid))]
+        (ruler)
+        (selrect)]))))
 
 (defn- viewport-did-mount
   [own]
